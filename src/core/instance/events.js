@@ -19,7 +19,7 @@ export function initEvents (vm: Component) {
   }
 }
 
-let target: Component
+let target: any
 
 // 增加事件，第三个参数决定是不是once
 function add (event, fn, once) {
@@ -42,6 +42,7 @@ export function updateComponentListeners (
 ) {
   target = vm
   updateListeners(listeners, oldListeners || {}, add, remove, vm)
+  target = undefined
 }
 
 /**
