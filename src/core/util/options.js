@@ -47,6 +47,14 @@ if (process.env.NODE_ENV !== 'production') {
 
 /**
  * Helper that recursively merges two data objects together.
+ * 合并to、from的属性。
+ * to、from不公有的属性（key）:
+ *    to[key] = from [key]
+ * to、from共有的属性（key）:
+ *    to[key]、from[key]均为object:
+ *        将mergeData(to[key]、from[key])赋值给to[key]。
+ *    to[key]、from[key]不同时为object:
+ *    to[key] = from [key]
  */
 function mergeData (to: Object, from: ?Object): Object {
   if (!from) return to
@@ -219,6 +227,10 @@ ASSET_TYPES.forEach(function (type) {
  *
  * Watchers hashes should not overwrite one
  * another, so we merge them as arrays.
+ * 
+ * 合并watch
+ * 相同属性，ret[key] = [parent, child]
+ * 不同属性，Array.isArray(child) ? child : [child]
  */
 strats.watch = function (
   parentVal: ?Object,
