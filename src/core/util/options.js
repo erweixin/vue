@@ -24,6 +24,9 @@ import {
  * Option overwriting strategies are functions that handle
  * how to merge a parent option value and a child option
  * value into the final value.
+ * 
+ * strats type: optionMergeStrategies: { [key: string]: Function };
+ * strats初始值： Object.create(null)
  */
 const strats = config.optionMergeStrategies
 
@@ -131,6 +134,14 @@ strats.data = function (
 
 /**
  * Hooks and props are merged as arrays.
+ * 一个参数：
+ *  返回原输入值
+ * 两个参数（parentVal，childVal）：
+ *  parentVal为null：
+ *    childVal是数组返回childVal
+ *    childVal不是数组，返回[childVal]
+ *  parentVal不为null:
+ *    返回parentVal.concat(childVal)
  */
 function mergeHook (
   parentVal: ?Array<Function>,
@@ -145,6 +156,20 @@ function mergeHook (
     : parentVal
 }
 
+/**
+ * LIFECYCLE_HOOKS：
+ * 'beforeCreate',
+ * 'created',
+ * 'beforeMount',
+ * 'mounted',
+ * 'beforeUpdate',
+ * 'updated',
+ * 'beforeDestroy',
+ * 'destroyed',
+ * 'activated',
+ * 'deactivated',
+ * 'errorCaptured'
+*/
 LIFECYCLE_HOOKS.forEach(hook => {
   strats[hook] = mergeHook
 })
@@ -155,6 +180,15 @@ LIFECYCLE_HOOKS.forEach(hook => {
  * When a vm is present (instance creation), we need to do
  * a three-way merge between constructor options, instance
  * options and parent options.
+ * 
+ * extend:
+ * for (const key in _from) {
+ *  to[key] = _from[key]
+ * }
+ * return to
+ * 
+ * mergeAssets:
+ * 合并childVal、parentVal属性。key重复时，采用childVal的值。
  */
 function mergeAssets (
   parentVal: ?Object,
@@ -170,7 +204,12 @@ function mergeAssets (
     return res
   }
 }
-
+/**
+ * ASSET_TYPES：
+ * 'component',
+ * 'directive',
+ * 'filter'
+*/
 ASSET_TYPES.forEach(function (type) {
   strats[type + 's'] = mergeAssets
 })
@@ -213,6 +252,9 @@ strats.watch = function (
 
 /**
  * Other object hashes.
+ * 
+ * props、methods、inject、computed合并方式：
+ * 合并childVal、parentVal属性。key重复时，采用childVal的值。
  */
 strats.props =
 strats.methods =
@@ -236,6 +278,11 @@ strats.provide = mergeDataOrFn
 
 /**
  * Default strategy.
+ * 
+ * 两个参数：
+ *    返回第二个参数
+ * 一个参数：
+ *    返回该参数
  */
 const defaultStrat = function (parentVal: any, childVal: any): any {
   return childVal === undefined
@@ -245,6 +292,8 @@ const defaultStrat = function (parentVal: any, childVal: any): any {
 
 /**
  * Validate component names
+ * 验证components没有使用内建标签(slot,component)和保留标签
+ * 这里config.isReservedTag总是会返回false,后面应该会有覆盖。
  */
 function checkComponents (options: Object) {
   for (const key in options.components) {
@@ -261,6 +310,48 @@ function checkComponents (options: Object) {
 /**
  * Ensure all props option syntax are normalized into the
  * Object-based format.
+ * before: 
+ * props = {
+ *  prop-a: Number,
+ *  prop-b: [String, Number],
+ *  propC: {
+ *    type: String,
+ *    required: true
+ *  },
+ *  propD: {
+ *    type: Number,
+ *    default: 100
+ *  },
+ * }
+ * after: 
+ * props = {
+ *  propA: {
+ *    type: Number,
+ *  },
+ *  propB: {
+ *    type: [String, Number],
+ *  },
+ *  propC: {
+ *    type: String,
+ *    required: true
+ *  },
+ *  propD: {
+ *    type: Number,
+ *    default: 100
+ *  },
+ * }
+ * //
+ * before:
+ * props = ['prop-a', 'propB']
+ * after:
+ * props = {
+ *  propA: {
+ *    type: null
+ *  },
+ *  propB: {
+ *    type: null
+ *  }
+ * }
  */
 function normalizeProps (options: Object, vm: ?Component) {
   const props = options.props
@@ -298,6 +389,7 @@ function normalizeProps (options: Object, vm: ?Component) {
 
 /**
  * Normalize all injections into Object-based format
+ * 格式类似于normalizeProps
  */
 function normalizeInject (options: Object, vm: ?Component) {
   const inject = options.inject
@@ -324,6 +416,24 @@ function normalizeInject (options: Object, vm: ?Component) {
 
 /**
  * Normalize raw function directives into object format.
+ * before:
+ * directives = {
+ *  dirA(){},
+ *  dirB(){} 
+ * }
+ * after:
+ * directives = {
+ *  directives = {
+ *    dirA: {
+ *      bind: dirA(){},
+ *      update: dirA(){}
+ *    },
+ *    dirB: {
+ *      bind: dirB(){},
+ *      update: dirB(){}
+ *    }
+ *  }
+ * }
  */
 function normalizeDirectives (options: Object) {
   const dirs = options.directives
@@ -337,6 +447,7 @@ function normalizeDirectives (options: Object) {
   }
 }
 
+// assert第二个参数为PlainObject
 function assertObjectType (name: string, value: any, vm: ?Component) {
   if (!isPlainObject(value)) {
     warn(
