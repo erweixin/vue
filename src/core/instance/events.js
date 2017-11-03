@@ -21,6 +21,7 @@ export function initEvents (vm: Component) {
 
 let target: any
 
+// 增加事件，第三个参数决定是不是once
 function add (event, fn, once) {
   if (once) {
     target.$once(event, fn)
@@ -29,6 +30,7 @@ function add (event, fn, once) {
   }
 }
 
+// 去除事件
 function remove (event, fn) {
   target.$off(event, fn)
 }
@@ -43,8 +45,17 @@ export function updateComponentListeners (
   target = undefined
 }
 
+/**
+ * 定义以下API：
+ * Vue.prototype.$on
+ * Vue.prototype.$once
+ * Vue.prototype.$off
+ * Vue.prototype.emit
+ */
 export function eventsMixin (Vue: Class<Component>) {
   const hookRE = /^hook:/
+
+  // vm._events[event] || (vm._events[event] = [])).push(fn)
   Vue.prototype.$on = function (event: string | Array<string>, fn: Function): Component {
     const vm: Component = this
     if (Array.isArray(event)) {
@@ -62,6 +73,13 @@ export function eventsMixin (Vue: Class<Component>) {
     return vm
   }
 
+  /**
+   * $once实现原理：
+   *    vm.$on(event, on)
+   *    触发该event事件时，先vm.$off(event, on)，删除events中的该事件。
+   *    再运行fn.apply(vm, arguments)
+   * on.fn = fn在vm.$off中判断对应event使用
+   */
   Vue.prototype.$once = function (event: string, fn: Function): Component {
     const vm: Component = this
     function on () {
@@ -73,6 +91,18 @@ export function eventsMixin (Vue: Class<Component>) {
     return vm
   }
 
+  /**
+   * 去除vm._events中的event
+   * arguments.length === 0:
+   *    vm.events = Object.create(null)
+   * arguments.length === 1:
+   *    !vm._events[event]:
+   *       return vm
+   *    vm._events[event] = null
+   * arguments.length === 2:
+   *    cbs = vm._events[event]是一个数组
+   *      去除cbs中对应fn的那一项
+   */
   Vue.prototype.$off = function (event?: string | Array<string>, fn?: Function): Component {
     const vm: Component = this
     // all
@@ -111,6 +141,7 @@ export function eventsMixin (Vue: Class<Component>) {
     return vm
   }
 
+  // 触发对应event
   Vue.prototype.$emit = function (event: string): Component {
     const vm: Component = this
     if (process.env.NODE_ENV !== 'production') {
@@ -128,6 +159,7 @@ export function eventsMixin (Vue: Class<Component>) {
     let cbs = vm._events[event]
     if (cbs) {
       cbs = cbs.length > 1 ? toArray(cbs) : cbs
+      // 去除arguments中的arguments[0]
       const args = toArray(arguments, 1)
       for (let i = 0, l = cbs.length; i < l; i++) {
         try {

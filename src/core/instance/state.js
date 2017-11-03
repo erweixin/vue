@@ -28,6 +28,7 @@ import {
   isReservedAttribute
 } from '../util/index'
 
+// isReserved: 以$或_开头
 const sharedPropertyDefinition = {
   enumerable: true,
   configurable: true,
@@ -142,6 +143,7 @@ function initData (vm: Component) {
         vm
       )
     } else if (!isReserved(key)) {
+      // 类似与：vm[key] = vm[_data][key]
       proxy(vm, `_data`, key)
     }
   }
@@ -289,6 +291,17 @@ function initWatch (vm: Component, watch: Object) {
   }
 }
 
+/**
+ * 
+ * isPlainObject(handler):
+ *  {
+ *    handler: callbackFn();
+ *    {boolean} deep?
+ *    {boolean} immediate?
+ *  }
+ * typeof handler === 'string':
+ *    handler = vm[handler]
+ */
 function createWatcher (
   vm: Component,
   keyOrFn: string | Function,
@@ -305,6 +318,12 @@ function createWatcher (
   return vm.$watch(keyOrFn, handler, options)
 }
 
+/**
+ * 定义以下API：
+ * Vue.prototype.$set
+ * Vue.prototype.$delete
+ * Vue.prototype.$watch
+ */
 export function stateMixin (Vue: Class<Component>) {
   // flow somehow has problems with directly declared definition object
   // when using Object.defineProperty, so we have to procedurally build up
@@ -343,9 +362,11 @@ export function stateMixin (Vue: Class<Component>) {
     options = options || {}
     options.user = true
     const watcher = new Watcher(vm, expOrFn, cb, options)
+    // 在选项参数中指定 immediate: true 将立即以表达式的当前值触发回调
     if (options.immediate) {
       cb.call(vm, watcher.value)
     }
+    // 返回一个取消观察函数，用来停止触发回调
     return function unwatchFn () {
       watcher.teardown()
     }

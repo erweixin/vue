@@ -71,7 +71,7 @@ export default class Watcher {
     if (typeof expOrFn === 'function') {
       this.getter = expOrFn
     } else {
-      this.getter = parsePath(expOrFn)
+      this.getter = parsePath(expOrFn) // a.b ==>vm[a][b]
       if (!this.getter) {
         this.getter = function () {}
         process.env.NODE_ENV !== 'production' && warn(
@@ -91,11 +91,11 @@ export default class Watcher {
    * Evaluate the getter, and re-collect dependencies.
    */
   get () {
-    pushTarget(this)
+    pushTarget(this) // Dep.target = this
     let value
     const vm = this.vm
     try {
-      value = this.getter.call(vm, vm)
+      value = this.getter.call(vm, vm) // 触发，主要作用是将该watcher加入对应dep.subs中。只会触发getter对应的值，实现对getter的watch
     } catch (e) {
       if (this.user) {
         handleError(e, vm, `getter for watcher "${this.expression}"`)
@@ -108,7 +108,7 @@ export default class Watcher {
       if (this.deep) {
         traverse(value)
       }
-      popTarget()
+      popTarget() // Dep.target = null ，方便下一个新的watcher
       this.cleanupDeps()
     }
     return value
@@ -116,8 +116,12 @@ export default class Watcher {
 
   /**
    * Add a dependency to this directive.
+   * 
+   * value = this.getter.call(vm, vm)时会触发一次或多次addDep事件，在该次watcher注册时：
+   * 所有新增的dep.id存放在newDepIds中。新增的dep存放在newDeps中。
+   * 通过depIds是否含有dep.id判断该dep中是否已经有了watcher。没有则将该watcher加入该dep中。
    */
-  addDep (dep: Dep) {
+  addDep (dep: Dep) { 
     const id = dep.id
     if (!this.newDepIds.has(id)) {
       this.newDepIds.add(id)
@@ -130,6 +134,10 @@ export default class Watcher {
 
   /**
    * Clean up for dependency collection.
+   * 
+   * 该次watcher对应所有的addDep触发过后，对于原来所有含有该watcher的dep。如果newDepIds不含有某个旧的dep.id,证明该dep与该watcher关联关系取消， dep.removeSub(this)
+   * 
+   * 并将newDepIds赋值给depIds，newDeps赋值给deps
    */
   cleanupDeps () {
     let i = this.deps.length
@@ -167,9 +175,11 @@ export default class Watcher {
   /**
    * Scheduler job interface.
    * Will be called by the scheduler.
+   * 
+   * 
    */
   run () {
-    if (this.active) {
+    if (this.active) { // 判断该watcher是否在活跃状态
       const value = this.get()
       if (
         value !== this.value ||
@@ -184,7 +194,7 @@ export default class Watcher {
         this.value = value
         if (this.user) {
           try {
-            this.cb.call(this.vm, value, oldValue)
+            this.cb.call(this.vm, value, oldValue) // 触发watch的callback函数
           } catch (e) {
             handleError(e, this.vm, `callback for watcher "${this.expression}"`)
           }
@@ -216,16 +226,23 @@ export default class Watcher {
 
   /**
    * Remove self from all dependencies' subscriber list.
+   * 
+   * 用来停止触发回调
    */
   teardown () {
     if (this.active) {
       // remove self from vm's watcher list
       // this is a somewhat expensive operation so we skip it
       // if the vm is being destroyed.
+      
+      // this.vm._watchers中去除该watcher
       if (!this.vm._isBeingDestroyed) {
         remove(this.vm._watchers, this)
       }
       let i = this.deps.length
+
+      // 对应的每个dep中去除该watcher
+      // this.active = false
       while (i--) {
         this.deps[i].removeSub(this)
       }
