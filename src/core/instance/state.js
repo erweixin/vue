@@ -28,6 +28,7 @@ import {
   isReservedAttribute
 } from '../util/index'
 
+// isReserved: 以$或_开头
 const sharedPropertyDefinition = {
   enumerable: true,
   configurable: true,
@@ -142,6 +143,7 @@ function initData (vm: Component) {
         vm
       )
     } else if (!isReserved(key)) {
+      // 类似与：vm[key] = vm[_data][key]
       proxy(vm, `_data`, key)
     }
   }
