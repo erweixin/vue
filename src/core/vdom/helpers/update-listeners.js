@@ -40,6 +40,7 @@ export function createFnInvoker (fns: Function | Array<Function>): Function {
   return invoker
 }
 
+// isUndef: is Undefined or null
 export function updateListeners (
   on: Object,
   oldOn: Object,
