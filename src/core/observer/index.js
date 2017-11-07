@@ -41,13 +41,13 @@ export class Observer {
     this.value = value
     this.dep = new Dep()
     this.vmCount = 0
-    def(value, '__ob__', this)
+    def(value, '__ob__', this)  // value.__ob__ = this,用在observe中判断是否已经在Observer                   
     if (Array.isArray(value)) {
       const augment = hasProto
         ? protoAugment
         : copyAugment
-      augment(value, arrayMethods, arrayKeys)
-      this.observeArray(value)
+      augment(value, arrayMethods, arrayKeys)  // 将Array原型属性赋值给value（或者放在__protp__上）
+      this.observeArray(value)  // observe value中的每一项
     } else {
       this.walk(value)
     }
@@ -103,12 +103,17 @@ function copyAugment (target: Object, src: Object, keys: Array<string>) {
  * Attempt to create an observer instance for a value,
  * returns the new observer if successfully observed,
  * or the existing observer if the value already has one.
+ * 
+ * 对于已经在observer的，返回该Observer.
+ * 对于没在observer的，返回new Observer(value).
  */
 export function observe (value: any, asRootData: ?boolean): Observer | void {
   if (!isObject(value) || value instanceof VNode) {
     return
   }
   let ob: Observer | void
+
+  // value.__ob__在new Observer(value)时定义，判断是否已observer
   if (hasOwn(value, '__ob__') && value.__ob__ instanceof Observer) {
     ob = value.__ob__
   } else if (
@@ -153,8 +158,8 @@ export function defineReactive (
     configurable: true,
     get: function reactiveGetter () {
       const value = getter ? getter.call(obj) : val
-      if (Dep.target) {
-        dep.depend()
+      if (Dep.target) { // 只有存在new watcher后，dep.target才不为null,Dep.target = 该watcher实例
+        dep.depend()  // Dep.target.addDep(Dep实例本身);最终实现将该watcher实例（Dep.target对应的）加入dep.subs
         if (childOb) {
           childOb.dep.depend()
           if (Array.isArray(value)) {
@@ -180,7 +185,7 @@ export function defineReactive (
         val = newVal
       }
       childOb = !shallow && observe(newVal)
-      dep.notify()
+      dep.notify() // 触发dep。subs中每一个watcher的update函数。
     }
   })
 }
