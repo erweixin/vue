@@ -80,7 +80,10 @@ function flushSchedulerQueue () {
   resetSchedulerState()
 
   // call component updated and activated hooks
+
+  // 调用activated生命周期钩子
   callActivatedHooks(activatedQueue)
+  // 调用updated生命周期钩子
   callUpdatedHooks(updatedQueue)
 
   // devtool hook
@@ -128,7 +131,7 @@ export function queueWatcher (watcher: Watcher) {
   const id = watcher.id
   if (has[id] == null) {
     has[id] = true
-    if (!flushing) {
+    if (!flushing) {  // 初始值为false,flushSchedulerQueue中会先将flushing设置为true，flushSchedulerQueue结束时重置flushing为false.
       queue.push(watcher)
     } else {
       // if already flushing, splice the watcher based on its id

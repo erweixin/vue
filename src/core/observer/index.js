@@ -185,7 +185,7 @@ export function defineReactive (
         val = newVal
       }
       childOb = !shallow && observe(newVal)
-      dep.notify() // 触发dep。subs中每一个watcher的update函数。
+      dep.notify() // 触发dep.subs中每一个watcher的update函数。
     }
   })
 }
@@ -194,6 +194,8 @@ export function defineReactive (
  * Set a property on an object. Adds the new property and
  * triggers change notification if the property doesn't
  * already exist.
+ * 
+ * // 只在已经被观察的对象上新增属性。
  */
 export function set (target: Array<any> | Object, key: any, val: any): any {
   if (Array.isArray(target) && isValidArrayIndex(key)) {
@@ -223,6 +225,8 @@ export function set (target: Array<any> | Object, key: any, val: any): any {
 }
 
 /**
+ * Delete a property and trigger change if necessary.
+ * 
  * Delete a property and trigger change if necessary.
  */
 export function del (target: Array<any> | Object, key: any) {

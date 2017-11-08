@@ -224,16 +224,23 @@ export default class Watcher {
 
   /**
    * Remove self from all dependencies' subscriber list.
+   * 
+   * 用来停止触发回调
    */
   teardown () {
     if (this.active) {
       // remove self from vm's watcher list
       // this is a somewhat expensive operation so we skip it
       // if the vm is being destroyed.
+      
+      // this.vm._watchers中去除该watcher
       if (!this.vm._isBeingDestroyed) {
         remove(this.vm._watchers, this)
       }
       let i = this.deps.length
+
+      // 对应的每个dep中去除该watcher
+      // this.active = false
       while (i--) {
         this.deps[i].removeSub(this)
       }
