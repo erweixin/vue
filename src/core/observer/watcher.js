@@ -175,9 +175,11 @@ export default class Watcher {
   /**
    * Scheduler job interface.
    * Will be called by the scheduler.
+   * 
+   * 
    */
   run () {
-    if (this.active) {
+    if (this.active) { // 判断该watcher是否在活跃状态
       const value = this.get()
       if (
         value !== this.value ||
@@ -192,7 +194,7 @@ export default class Watcher {
         this.value = value
         if (this.user) {
           try {
-            this.cb.call(this.vm, value, oldValue)
+            this.cb.call(this.vm, value, oldValue) // 触发watch的callback函数
           } catch (e) {
             handleError(e, this.vm, `callback for watcher "${this.expression}"`)
           }

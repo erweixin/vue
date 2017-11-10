@@ -47,16 +47,20 @@ function flushSchedulerQueue () {
   //    user watchers are created before the render watcher)
   // 3. If a component is destroyed during a parent component's watcher run,
   //    its watchers can be skipped.
-  queue.sort((a, b) => a.id - b.id)
+  queue.sort((a, b) => a.id - b.id)  // 根据ID排序
 
   // do not cache length because more watchers might be pushed
   // as we run existing watchers
+
+  // 循环调用队列中的watcher.run()
   for (index = 0; index < queue.length; index++) {
     watcher = queue[index]
     id = watcher.id
     has[id] = null
     watcher.run()
     // in dev build, check and stop circular updates.
+
+    // 判断是否有死循环
     if (process.env.NODE_ENV !== 'production' && has[id] != null) {
       circular[id] = (circular[id] || 0) + 1
       if (circular[id] > MAX_UPDATE_COUNT) {
@@ -77,13 +81,14 @@ function flushSchedulerQueue () {
   const activatedQueue = activatedChildren.slice()
   const updatedQueue = queue.slice()
 
+  // 重置
   resetSchedulerState()
 
   // call component updated and activated hooks
 
-  // 调用activated生命周期钩子
+  // 调用队列中每一个watcher.vm的activated生命周期钩子
   callActivatedHooks(activatedQueue)
-  // 调用updated生命周期钩子
+  // 调用队列中每一个watcher.vm的updated生命周期钩子
   callUpdatedHooks(updatedQueue)
 
   // devtool hook
@@ -136,6 +141,10 @@ export function queueWatcher (watcher: Watcher) {
     } else {
       // if already flushing, splice the watcher based on its id
       // if already past its id, it will be run next immediately.
+
+      // flushSchedulerQueue进行时会走该else选项。将该watcher按照id顺序加入该queue中。
+      // 通过i > index                               保证   if already past its id, it will be run next immediately.
+      // 通过i > index && queue[i].id > watcher.id   保证   if already flushing, splice the watcher based on its id
       let i = queue.length - 1
       while (i > index && queue[i].id > watcher.id) {
         i--
@@ -143,8 +152,8 @@ export function queueWatcher (watcher: Watcher) {
       queue.splice(i + 1, 0, watcher)
     }
     // queue the flush
-    if (!waiting) {
-      waiting = true
+    if (!waiting) {  
+      waiting = true // waiting初始值为false，这里设置为true,flushSchedulerQueue结束初始化时重置为false
       nextTick(flushSchedulerQueue)
     }
   }

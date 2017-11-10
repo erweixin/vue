@@ -21,6 +21,7 @@ export function initEvents (vm: Component) {
 
 let target: Component
 
+// 增加事件，第三个参数决定是不是once
 function add (event, fn, once) {
   if (once) {
     target.$once(event, fn)
@@ -29,6 +30,7 @@ function add (event, fn, once) {
   }
 }
 
+// 去除事件
 function remove (event, fn) {
   target.$off(event, fn)
 }
@@ -42,8 +44,17 @@ export function updateComponentListeners (
   updateListeners(listeners, oldListeners || {}, add, remove, vm)
 }
 
+/**
+ * 定义以下API：
+ * Vue.prototype.$on
+ * Vue.prototype.$once
+ * Vue.prototype.$off
+ * Vue.prototype.emit
+ */
 export function eventsMixin (Vue: Class<Component>) {
   const hookRE = /^hook:/
+
+  // vm._events[event] || (vm._events[event] = [])).push(fn)
   Vue.prototype.$on = function (event: string | Array<string>, fn: Function): Component {
     const vm: Component = this
     if (Array.isArray(event)) {
@@ -88,7 +99,7 @@ export function eventsMixin (Vue: Class<Component>) {
    *       return vm
    *    vm._events[event] = null
    * arguments.length === 2:
-   *    cbs = vm._events[event]
+   *    cbs = vm._events[event]是一个数组
    *      去除cbs中对应fn的那一项
    */
   Vue.prototype.$off = function (event?: string | Array<string>, fn?: Function): Component {
