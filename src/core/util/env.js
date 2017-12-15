@@ -64,8 +64,6 @@ export const hasSymbol =
 
 /**
  * Defer a task to execute it asynchronously.
- * 
- * https://chuckliu.me/#!/posts/58bd08a2b5187d2fb51c04f9
  */
 export const nextTick = (function () {
   const callbacks = []

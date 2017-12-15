@@ -10,8 +10,6 @@ export const arrayMethods = Object.create(arrayProto)
 
 /**
  * Intercept mutating methods and emit events
- * 
- * // 数组监控push,pop等。
  */
 ;[
   'push',

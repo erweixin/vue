@@ -49,11 +49,6 @@ export function initRender (vm: Component) {
   }
 }
 
-/**
- * 定义以下API：
- * Vue.prototype.$nextTick
- * Vue.prototype._render
- */
 export function renderMixin (Vue: Class<Component>) {
   // install runtime convenience helpers
   installRenderHelpers(Vue.prototype)
